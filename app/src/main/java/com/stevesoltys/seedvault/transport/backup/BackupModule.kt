@@ -1,56 +1,55 @@
+/*
+ * SPDX-FileCopyrightText: 2020 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.transport.backup
 
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 val backupModule = module {
+    single { BackupInitializer(get()) }
     single { InputFactory() }
     single {
         PackageService(
             context = androidContext(),
             backupManager = get(),
             settingsManager = get(),
-            plugin = get()
-        )
-    }
-    single {
-        ApkBackup(
-            pm = androidContext().packageManager,
-            crypto = get(),
-            settingsManager = get(),
-            metadataManager = get()
+            pluginManager = get(),
         )
     }
     single<KvDbManager> { KvDbManagerImpl(androidContext()) }
     single {
         KVBackup(
-            plugin = get(),
+            pluginManager = get(),
             settingsManager = get(),
+            nm = get(),
             inputFactory = get(),
             crypto = get(),
-            dbManager = get()
+            dbManager = get(),
         )
     }
     single {
         FullBackup(
-            plugin = get(),
+            pluginManager = get(),
             settingsManager = get(),
+            nm = get(),
             inputFactory = get(),
-            crypto = get()
+            crypto = get(),
         )
     }
     single {
         BackupCoordinator(
             context = androidContext(),
-            plugin = get(),
+            pluginManager = get(),
             kv = get(),
             full = get(),
-            apkBackup = get(),
             clock = get(),
             packageService = get(),
             metadataManager = get(),
             settingsManager = get(),
-            nm = get()
+            nm = get(),
         )
     }
 }

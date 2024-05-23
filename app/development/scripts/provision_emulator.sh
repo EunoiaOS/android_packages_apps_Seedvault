@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+#
+# SPDX-FileCopyrightText: 2023 The Calyx Institute
+# SPDX-License-Identifier: Apache-2.0
+#
 
 # assert ANDROID_HOME is set
 if [ -z "$ANDROID_HOME" ]; then
@@ -96,5 +100,8 @@ $ADB wait-for-device
 $ADB shell mkdir -p /sdcard/seedvault_baseline
 $ADB shell tar xzf /sdcard/backup.tar.gz --directory=/sdcard/seedvault_baseline
 $ADB shell rm /sdcard/backup.tar.gz
+
+# sometimes a system dialog (e.g. launcher stopped) is showing and taking focus
+$ADB shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS
 
 echo "Emulator '$EMULATOR_NAME' has been provisioned with Seedvault!"

@@ -1,9 +1,9 @@
 # Seedvault
-[![Build](https://github.com/seedvault-app/seedvault/workflows/Build/badge.svg?branch=master)](https://github.com/seedvault-app/seedvault/actions?query=branch%3Amaster+workflow%3ABuild)
+[![Build](https://github.com/seedvault-app/seedvault/actions/workflows/build.yml/badge.svg)](https://github.com/seedvault-app/seedvault/actions/workflows/build.yml)
 
 A backup application for the [Android Open Source Project](https://source.android.com/).
 
-If you are having an issue/question, please look at our [FAQ](../../wiki/FAQ).
+If you are having an issue/question, please look at our [FAQ](https://github.com/seedvault-app/seedvault/wiki/FAQ).
 
 ## Components
 
@@ -46,6 +46,7 @@ It uses the same internal APIs as `adb backup` which is deprecated and thus need
 * `android.permission.MANAGE_USB` to access the serial number of USB mass storage devices.
 * `android.permission.WRITE_SECURE_SETTINGS` to change system backup settings and enable call log backup.
 * `android.permission.QUERY_ALL_PACKAGES` to get information about all installed apps for backup.
+* `android.permission.QUERY_USERS` to get the name of the user profile that gets backed up.
 * `android.permission.INSTALL_PACKAGES` to re-install apps when restoring from backup.
 * `android.permission.MANAGE_EXTERNAL_STORAGE` to backup and restore files from device storage.
 * `android.permission.ACCESS_MEDIA_LOCATION` to backup original media files e.g. without stripped EXIF metadata.

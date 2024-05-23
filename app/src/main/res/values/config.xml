@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2020 The Calyx Institute
+  SPDX-License-Identifier: Apache-2.0
+  -->
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!--
     Normally, restoring from backup is only available during initial device setup.
@@ -18,6 +22,7 @@
         <item>com.android.externalstorage.documents</item>
         <item>org.nextcloud.documents</item>
         <item>at.bitfire.davdroid.webdav</item>
+        <item>de.felixnuesse.extract.vcp</item>
     </string-array>
 
     <!--

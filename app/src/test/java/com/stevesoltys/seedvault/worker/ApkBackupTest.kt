@@ -1,4 +1,9 @@
-package com.stevesoltys.seedvault.transport.backup
+/*
+ * SPDX-FileCopyrightText: 2024 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package com.stevesoltys.seedvault.worker
 
 import android.content.pm.ApplicationInfo.FLAG_SYSTEM
 import android.content.pm.ApplicationInfo.FLAG_TEST_ONLY
@@ -13,6 +18,7 @@ import com.stevesoltys.seedvault.getRandomString
 import com.stevesoltys.seedvault.metadata.ApkSplit
 import com.stevesoltys.seedvault.metadata.PackageMetadata
 import com.stevesoltys.seedvault.metadata.PackageState.UNKNOWN_ERROR
+import com.stevesoltys.seedvault.transport.backup.BackupTest
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -32,7 +38,6 @@ import java.io.OutputStream
 import java.nio.file.Path
 import kotlin.random.Random
 
-@Suppress("BlockingMethodInNonBlockingContext")
 internal class ApkBackupTest : BackupTest() {
 
     private val pm: PackageManager = mockk()
@@ -56,7 +61,7 @@ internal class ApkBackupTest : BackupTest() {
     @Test
     fun `does not back up @pm@`() = runBlocking {
         val packageInfo = PackageInfo().apply { packageName = MAGIC_PACKAGE_MANAGER }
-        assertNull(apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter))
+        assertNull(apkBackup.backupApkIfNecessary(packageInfo, streamGetter))
     }
 
     @Test
@@ -64,7 +69,7 @@ internal class ApkBackupTest : BackupTest() {
         every { settingsManager.backupApks() } returns false
         every { settingsManager.isBackupEnabled(any()) } returns true
 
-        assertNull(apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter))
+        assertNull(apkBackup.backupApkIfNecessary(packageInfo, streamGetter))
     }
 
     @Test
@@ -72,7 +77,7 @@ internal class ApkBackupTest : BackupTest() {
         every { settingsManager.backupApks() } returns true
         every { settingsManager.isBackupEnabled(any()) } returns false
 
-        assertNull(apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter))
+        assertNull(apkBackup.backupApkIfNecessary(packageInfo, streamGetter))
     }
 
     @Test
@@ -81,7 +86,7 @@ internal class ApkBackupTest : BackupTest() {
 
         every { settingsManager.isBackupEnabled(any()) } returns true
         every { settingsManager.backupApks() } returns true
-        assertNull(apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter))
+        assertNull(apkBackup.backupApkIfNecessary(packageInfo, streamGetter))
     }
 
     @Test
@@ -90,7 +95,7 @@ internal class ApkBackupTest : BackupTest() {
 
         every { settingsManager.isBackupEnabled(any()) } returns true
         every { settingsManager.backupApks() } returns true
-        assertNull(apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter))
+        assertNull(apkBackup.backupApkIfNecessary(packageInfo, streamGetter))
     }
 
     @Test
@@ -102,7 +107,7 @@ internal class ApkBackupTest : BackupTest() {
 
         expectChecks(packageMetadata)
 
-        assertNull(apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter))
+        assertNull(apkBackup.backupApkIfNecessary(packageInfo, streamGetter))
     }
 
     @Test
@@ -113,7 +118,7 @@ internal class ApkBackupTest : BackupTest() {
 
         assertThrows(IOException::class.java) {
             runBlocking {
-                assertNull(apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter))
+                assertNull(apkBackup.backupApkIfNecessary(packageInfo, streamGetter))
             }
         }
     }
@@ -128,7 +133,7 @@ internal class ApkBackupTest : BackupTest() {
         every { sigInfo.hasMultipleSigners() } returns false
         every { sigInfo.signingCertificateHistory } returns emptyArray()
 
-        assertNull(apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter))
+        assertNull(apkBackup.backupApkIfNecessary(packageInfo, streamGetter))
     }
 
     @Test
@@ -141,7 +146,7 @@ internal class ApkBackupTest : BackupTest() {
         }.absolutePath
         val apkOutputStream = ByteArrayOutputStream()
         val updatedMetadata = PackageMetadata(
-            time = 0L,
+            time = packageMetadata.time,
             state = UNKNOWN_ERROR,
             version = packageInfo.longVersionCode,
             installer = getRandomString(),
@@ -159,7 +164,7 @@ internal class ApkBackupTest : BackupTest() {
 
         assertEquals(
             updatedMetadata,
-            apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter)
+            apkBackup.backupApkIfNecessary(packageInfo, streamGetter)
         )
         assertArrayEquals(apkBytes, apkOutputStream.toByteArray())
     }
@@ -198,13 +203,13 @@ internal class ApkBackupTest : BackupTest() {
         val split2OutputStream = ByteArrayOutputStream()
         // expected new metadata for package
         val updatedMetadata = PackageMetadata(
-            time = 0L,
+            time = packageMetadata.time,
             state = UNKNOWN_ERROR,
             version = packageInfo.longVersionCode,
             installer = getRandomString(),
             splits = listOf(
-                ApkSplit(split1Name, split1Sha256),
-                ApkSplit(split2Name, split2Sha256)
+                ApkSplit(split1Name, split1Bytes.size.toLong(), split1Sha256),
+                ApkSplit(split2Name, split2Bytes.size.toLong(), split2Sha256)
             ),
             sha256 = "eHx5jjmlvBkQNVuubQzYejay4Q_QICqD47trAF2oNHI",
             signatures = packageMetadata.signatures
@@ -231,7 +236,7 @@ internal class ApkBackupTest : BackupTest() {
 
         assertEquals(
             updatedMetadata,
-            apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, streamGetter)
+            apkBackup.backupApkIfNecessary(packageInfo, streamGetter)
         )
         assertArrayEquals(apkBytes, apkOutputStream.toByteArray())
         assertArrayEquals(split1Bytes, split1OutputStream.toByteArray())

@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault
 
 import com.stevesoltys.seedvault.restore.RestoreViewModel
@@ -31,8 +36,8 @@ class KoinInstrumentationTestApp : App() {
             single { spyk(SettingsManager(context)) }
 
             single { spyk(BackupNotificationManager(context)) }
-            single { spyk(FullBackup(get(), get(), get(), get())) }
-            single { spyk(KVBackup(get(), get(), get(), get(), get())) }
+            single { spyk(FullBackup(get(), get(), get(), get(), get())) }
+            single { spyk(KVBackup(get(), get(), get(), get(), get(), get())) }
             single { spyk(InputFactory()) }
 
             single { spyk(FullRestore(get(), get(), get(), get(), get())) }
@@ -41,19 +46,20 @@ class KoinInstrumentationTestApp : App() {
 
             viewModel {
                 currentRestoreViewModel =
-                    spyk(RestoreViewModel(context, get(), get(), get(), get(), get(), get()))
+                    spyk(RestoreViewModel(context, get(), get(), get(), get(), get(), get(), get()))
                 currentRestoreViewModel!!
             }
 
             viewModel {
-                currentBackupStorageViewModel =
-                    spyk(BackupStorageViewModel(context, get(), get(), get(), get()))
+                val viewModel =
+                    BackupStorageViewModel(context, get(), get(), get(), get(), get(), get(), get())
+                currentBackupStorageViewModel = spyk(viewModel)
                 currentBackupStorageViewModel!!
             }
 
             viewModel {
                 currentRestoreStorageViewModel =
-                    spyk(RestoreStorageViewModel(context, get(), get()))
+                    spyk(RestoreStorageViewModel(context, get(), get(), get(), get()))
                 currentRestoreStorageViewModel!!
             }
         }

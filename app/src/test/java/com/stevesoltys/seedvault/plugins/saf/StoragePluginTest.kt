@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2020 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.plugins.saf
 
 import androidx.documentfile.provider.DocumentFile
@@ -11,7 +16,6 @@ import io.mockk.mockkStatic
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 
-@Suppress("BlockingMethodInNonBlockingContext")
 internal class StoragePluginTest : BackupTest() {
 
     private val storage = mockk<DocumentsStorage>()
@@ -39,7 +43,7 @@ internal class StoragePluginTest : BackupTest() {
         // get current set dir and for that the current token
         every { storage getProperty "currentToken" } returns token
         every { settingsManager.getToken() } returns token
-        every { storage getProperty "storage" } returns null // just to check if isUsb
+        every { storage getProperty "safStorage" } returns null // just to check if isUsb
         coEvery { storage.getSetDir(token) } returns setDir
         // delete contents of current set dir
         coEvery { setDir.listFilesBlocking(context) } returns listOf(backupFile)

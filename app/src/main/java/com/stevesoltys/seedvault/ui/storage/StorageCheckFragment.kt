@@ -1,6 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: 2020 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.ui.storage
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.GONE
@@ -10,6 +16,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
 import com.stevesoltys.seedvault.R
 
@@ -31,6 +38,14 @@ class StorageCheckFragment : Fragment() {
                 putString(ERROR_MSG, errorMsg)
             }
             return f
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        requireActivity().onBackPressedDispatcher.addCallback(this) {
+            Log.i("StorageCheckFragment", "Not navigating back!")
         }
     }
 

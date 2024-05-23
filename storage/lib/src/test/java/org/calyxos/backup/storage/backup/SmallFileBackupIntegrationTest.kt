@@ -77,7 +77,6 @@ internal class SmallFileBackupIntegrationTest {
         val outputStream2 = ByteArrayOutputStream()
 
         val chunkId = Random.nextBytes(KEY_SIZE_BYTES)
-        val cachedChunk = CachedChunk(chunkId.toHexString(), 0, 181, 0)
         val cachedFile2 = file2.toCachedFile(listOf(chunkId.toHexString()), 1)
         val backupFile = file2.toBackupFile(cachedFile2.chunks, cachedFile2.zipIndex)
 
@@ -92,14 +91,23 @@ internal class SmallFileBackupIntegrationTest {
 
         every { mac.doFinal(any<ByteArray>()) } returns chunkId
         every { chunksCache.get(any()) } returns null
-        every { storagePlugin.getChunkOutputStream(any()) } returns outputStream2
-        every { chunksCache.insert(cachedChunk) } just Runs
+        coEvery { storagePlugin.getChunkOutputStream(any()) } returns outputStream2
+        every {
+            chunksCache.insert(match<CachedChunk> { cachedChunk ->
+                cachedChunk.id == chunkId.toHexString() &&
+                    cachedChunk.refCount == 0L &&
+                    cachedChunk.size <= outputStream2.size() &&
+                    cachedChunk.version == 0.toByte()
+            })
+        } just Runs
         every {
             filesCache.upsert(match {
                 it.copy(lastSeen = cachedFile2.lastSeen) == cachedFile2
             })
         } just Runs
-        coEvery { observer.onFileBackedUp(file2, true, 0, 181, "S") } just Runs
+        coEvery {
+            observer.onFileBackedUp(file2, true, 0, match<Long> { it <= outputStream2.size() }, "S")
+        } just Runs
 
         val result = smallFileBackup.backupFiles(files, availableChunkIds, observer)
         assertEquals(setOf(chunkId.toHexString()), result.chunkIds)
@@ -108,7 +116,7 @@ internal class SmallFileBackupIntegrationTest {
         assertEquals(0, result.backupMediaFiles.size)
 
         coVerify {
-            observer.onFileBackedUp(file2, true, 0, 181, "S")
+            observer.onFileBackedUp(file2, true, 0, match<Long> { it <= outputStream2.size() }, "S")
         }
     }
 

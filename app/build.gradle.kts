@@ -1,3 +1,8 @@
+//
+// SPDX-FileCopyrightText: 2023 The Calyx Institute
+// SPDX-License-Identifier: Apache-2.0
+//
+
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.io.ByteArrayOutputStream
 
@@ -158,6 +163,9 @@ dependencies {
     implementation(fileTree("${rootProject.rootDir}/libs/koin-android").include("*.aar"))
 
     implementation(fileTree("${rootProject.rootDir}/libs").include("kotlin-bip39-jvm-1.0.6.jar"))
+
+    // dav4jvm - later versions of okhttp need kotlin > 1.9.0
+    implementation(fileTree("${rootProject.rootDir}/libs/dav4jvm").include("*.jar"))
 
     /**
      * Test Dependencies (do not concern the AOSP build)

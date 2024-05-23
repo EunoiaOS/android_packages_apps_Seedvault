@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2020 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.transport
 
 import android.app.backup.BackupDataInput
@@ -15,11 +20,10 @@ import com.stevesoltys.seedvault.header.MAX_SEGMENT_CLEARTEXT_LENGTH
 import com.stevesoltys.seedvault.metadata.BackupType
 import com.stevesoltys.seedvault.metadata.MetadataReaderImpl
 import com.stevesoltys.seedvault.metadata.PackageMetadata
-import com.stevesoltys.seedvault.metadata.PackageState.UNKNOWN_ERROR
 import com.stevesoltys.seedvault.plugins.LegacyStoragePlugin
 import com.stevesoltys.seedvault.plugins.StoragePlugin
+import com.stevesoltys.seedvault.plugins.StoragePluginManager
 import com.stevesoltys.seedvault.plugins.saf.FILE_BACKUP_METADATA
-import com.stevesoltys.seedvault.transport.backup.ApkBackup
 import com.stevesoltys.seedvault.transport.backup.BackupCoordinator
 import com.stevesoltys.seedvault.transport.backup.FullBackup
 import com.stevesoltys.seedvault.transport.backup.InputFactory
@@ -31,6 +35,7 @@ import com.stevesoltys.seedvault.transport.restore.KVRestore
 import com.stevesoltys.seedvault.transport.restore.OutputFactory
 import com.stevesoltys.seedvault.transport.restore.RestoreCoordinator
 import com.stevesoltys.seedvault.ui.notification.BackupNotificationManager
+import com.stevesoltys.seedvault.worker.ApkBackup
 import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -47,7 +52,6 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import kotlin.random.Random
 
-@Suppress("BlockingMethodInNonBlockingContext")
 internal class CoordinatorIntegrationTest : TransportTest() {
 
     private val inputFactory = mockk<InputFactory>()
@@ -59,21 +63,33 @@ internal class CoordinatorIntegrationTest : TransportTest() {
     private val metadataReader = MetadataReaderImpl(cryptoImpl)
     private val notificationManager = mockk<BackupNotificationManager>()
     private val dbManager = TestKvDbManager()
+    private val storagePluginManager: StoragePluginManager = mockk()
 
     @Suppress("Deprecation")
     private val legacyPlugin = mockk<LegacyStoragePlugin>()
-    private val backupPlugin = mockk<StoragePlugin>()
-    private val kvBackup =
-        KVBackup(backupPlugin, settingsManager, inputFactory, cryptoImpl, dbManager)
-    private val fullBackup = FullBackup(backupPlugin, settingsManager, inputFactory, cryptoImpl)
+    private val backupPlugin = mockk<StoragePlugin<*>>()
+    private val kvBackup = KVBackup(
+        pluginManager = storagePluginManager,
+        settingsManager = settingsManager,
+        nm = notificationManager,
+        inputFactory = inputFactory,
+        crypto = cryptoImpl,
+        dbManager = dbManager,
+    )
+    private val fullBackup = FullBackup(
+        pluginManager = storagePluginManager,
+        settingsManager = settingsManager,
+        nm = notificationManager,
+        inputFactory = inputFactory,
+        crypto = cryptoImpl,
+    )
     private val apkBackup = mockk<ApkBackup>()
     private val packageService: PackageService = mockk()
     private val backup = BackupCoordinator(
         context,
-        backupPlugin,
+        storagePluginManager,
         kvBackup,
         fullBackup,
-        apkBackup,
         clock,
         packageService,
         metadataManager,
@@ -82,7 +98,7 @@ internal class CoordinatorIntegrationTest : TransportTest() {
     )
 
     private val kvRestore = KVRestore(
-        backupPlugin,
+        storagePluginManager,
         legacyPlugin,
         outputFactory,
         headerReader,
@@ -90,14 +106,14 @@ internal class CoordinatorIntegrationTest : TransportTest() {
         dbManager
     )
     private val fullRestore =
-        FullRestore(backupPlugin, legacyPlugin, outputFactory, headerReader, cryptoImpl)
+        FullRestore(storagePluginManager, legacyPlugin, outputFactory, headerReader, cryptoImpl)
     private val restore = RestoreCoordinator(
         context,
         crypto,
         settingsManager,
         metadataManager,
         notificationManager,
-        backupPlugin,
+        storagePluginManager,
         kvRestore,
         fullRestore,
         metadataReader
@@ -114,6 +130,10 @@ internal class CoordinatorIntegrationTest : TransportTest() {
 
     // as we use real crypto, we need a real name for packageInfo
     private val realName = cryptoImpl.getNameForPackage(salt, packageInfo.packageName)
+
+    init {
+        every { storagePluginManager.appPlugin } returns backupPlugin
+    }
 
     @Test
     fun `test key-value backup and restore with 2 records`() = runBlocking {
@@ -138,13 +158,13 @@ internal class CoordinatorIntegrationTest : TransportTest() {
             appData2.size
         }
         coEvery {
-            apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, any())
+            apkBackup.backupApkIfNecessary(packageInfo, any())
         } returns packageMetadata
         coEvery {
             backupPlugin.getOutputStream(token, FILE_BACKUP_METADATA)
         } returns metadataOutputStream
         every {
-            metadataManager.onApkBackedUp(packageInfo, packageMetadata, metadataOutputStream)
+            metadataManager.onApkBackedUp(packageInfo, packageMetadata)
         } just Runs
         every {
             metadataManager.onPackageBackedUp(
@@ -215,7 +235,7 @@ internal class CoordinatorIntegrationTest : TransportTest() {
             appData.copyInto(value.captured) // write the app data into the passed ByteArray
             appData.size
         }
-        coEvery { apkBackup.backupApkIfNecessary(packageInfo, UNKNOWN_ERROR, any()) } returns null
+        coEvery { apkBackup.backupApkIfNecessary(packageInfo, any()) } returns null
         every { settingsManager.getToken() } returns token
         coEvery {
             backupPlugin.getOutputStream(token, FILE_BACKUP_METADATA)
@@ -279,25 +299,13 @@ internal class CoordinatorIntegrationTest : TransportTest() {
         coEvery { backupPlugin.getOutputStream(token, realName) } returns bOutputStream
         every { inputFactory.getInputStream(fileDescriptor) } returns bInputStream
         every { settingsManager.isQuotaUnlimited() } returns false
-        coEvery {
-            apkBackup.backupApkIfNecessary(
-                packageInfo,
-                UNKNOWN_ERROR,
-                any()
-            )
-        } returns packageMetadata
+        coEvery { apkBackup.backupApkIfNecessary(packageInfo, any()) } returns packageMetadata
         every { settingsManager.getToken() } returns token
         every { metadataManager.salt } returns salt
         coEvery {
             backupPlugin.getOutputStream(token, FILE_BACKUP_METADATA)
         } returns metadataOutputStream
-        every {
-            metadataManager.onApkBackedUp(
-                packageInfo,
-                packageMetadata,
-                metadataOutputStream
-            )
-        } just Runs
+        every { metadataManager.onApkBackedUp(packageInfo, packageMetadata) } just Runs
         every {
             metadataManager.onPackageBackedUp(
                 packageInfo = packageInfo,

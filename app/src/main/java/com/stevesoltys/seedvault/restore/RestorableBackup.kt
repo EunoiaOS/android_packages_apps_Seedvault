@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2020 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.restore
 
 import com.stevesoltys.seedvault.metadata.BackupMetadata
@@ -19,6 +24,9 @@ data class RestorableBackup(val backupMetadata: BackupMetadata) {
 
     val time: Long
         get() = backupMetadata.time
+
+    val size: Long?
+        get() = backupMetadata.size
 
     val deviceName: String
         get() = backupMetadata.deviceName

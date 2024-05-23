@@ -1,7 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: 2023 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.e2e
 
 import android.content.pm.PackageInfo
 import android.os.ParcelFileDescriptor
+import androidx.test.uiautomator.Until
 import com.stevesoltys.seedvault.e2e.io.BackupDataInputIntercept
 import com.stevesoltys.seedvault.e2e.io.InputStreamIntercept
 import com.stevesoltys.seedvault.e2e.screen.impl.BackupScreen
@@ -44,6 +50,11 @@ internal interface LargeBackupTestBase : LargeTestBase {
             if (!backupManager.isBackupEnabled) {
                 backupSwitch.click()
                 waitUntilIdle()
+
+                BackupScreen {
+                    device.wait(Until.hasObject(initializingText), 10000)
+                    device.wait(Until.gone(initializingText), 120000)
+                }
             }
 
             backupMenu.clickAndWaitForNewWindow()
@@ -179,7 +190,7 @@ internal interface LargeBackupTestBase : LargeTestBase {
         clearMocks(spyBackupNotificationManager)
 
         every {
-            spyBackupNotificationManager.onBackupFinished(any(), any(), any())
+            spyBackupNotificationManager.onBackupFinished(any(), any(), any(), any())
         } answers {
             val success = firstArg<Boolean>()
             assert(success) { "Backup failed." }

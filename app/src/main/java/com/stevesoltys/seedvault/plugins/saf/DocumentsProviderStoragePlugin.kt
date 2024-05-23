@@ -1,13 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: 2020 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.plugins.saf
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Environment
+import android.os.StatFs
+import android.provider.DocumentsContract
+import android.provider.DocumentsContract.Root.COLUMN_AVAILABLE_BYTES
+import android.provider.DocumentsContract.Root.COLUMN_ROOT_ID
 import android.util.Log
+import androidx.core.database.getIntOrNull
 import androidx.documentfile.provider.DocumentFile
 import com.stevesoltys.seedvault.getStorageContext
 import com.stevesoltys.seedvault.plugins.EncryptedMetadata
 import com.stevesoltys.seedvault.plugins.StoragePlugin
-import com.stevesoltys.seedvault.settings.Storage
+import com.stevesoltys.seedvault.plugins.chunkFolderRegex
+import com.stevesoltys.seedvault.plugins.tokenRegex
+import com.stevesoltys.seedvault.ui.storage.AUTHORITY_STORAGE
+import com.stevesoltys.seedvault.ui.storage.ROOT_ID_DEVICE
+import org.calyxos.backup.storage.plugin.PluginConstants.SNAPSHOT_EXT
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
@@ -15,42 +31,60 @@ import java.io.OutputStream
 
 private val TAG = DocumentsProviderStoragePlugin::class.java.simpleName
 
-@Suppress("BlockingMethodInNonBlockingContext")
 internal class DocumentsProviderStoragePlugin(
     private val appContext: Context,
     private val storage: DocumentsStorage,
-) : StoragePlugin {
+) : StoragePlugin<Uri> {
 
     /**
      * Attention: This context might be from a different user. Use with care.
      */
-    private val context: Context
-        get() = appContext.getStorageContext {
-            storage.storage?.isUsb == true
-        }
+    private val context: Context get() = appContext.getStorageContext { storage.safStorage.isUsb }
 
     private val packageManager: PackageManager = appContext.packageManager
+
+    override suspend fun test(): Boolean {
+        val dir = storage.rootBackupDir
+        return dir != null && dir.exists()
+    }
+
+    override suspend fun getFreeSpace(): Long? {
+        val rootId = storage.safStorage.rootId ?: return null
+        val authority = storage.safStorage.uri.authority
+        // using DocumentsContract#buildRootUri(String, String) with rootId directly doesn't work
+        val rootUri = DocumentsContract.buildRootsUri(authority)
+        val projection = arrayOf(COLUMN_AVAILABLE_BYTES)
+        // query directly for our rootId
+        val bytesAvailable = context.contentResolver.query(
+            rootUri, projection, "$COLUMN_ROOT_ID=?", arrayOf(rootId), null
+        )?.use { c ->
+            if (!c.moveToNext()) return@use null // no results
+            val bytes = c.getIntOrNull(c.getColumnIndex(COLUMN_AVAILABLE_BYTES))
+            if (bytes != null && bytes >= 0) return@use bytes.toLong()
+            else return@use null
+        }
+        // if we didn't get anything from SAF, try some known hacks
+        return if (bytesAvailable == null && authority == AUTHORITY_STORAGE) {
+            if (rootId == ROOT_ID_DEVICE) {
+                StatFs(Environment.getDataDirectory().absolutePath).availableBytes
+            } else if (storage.safStorage.isUsb) {
+                val documentId = storage.safStorage.uri.lastPathSegment ?: return null
+                StatFs("/mnt/media_rw/${documentId.trimEnd(':')}").availableBytes
+            } else null
+        } else bytesAvailable
+    }
 
     @Throws(IOException::class)
     override suspend fun startNewRestoreSet(token: Long) {
         // reset current storage
         storage.reset(token)
-
-        // get or create root backup dir
-        storage.rootBackupDir ?: throw IOException()
     }
 
     @Throws(IOException::class)
     override suspend fun initializeDevice() {
-        // wipe existing data
-        storage.getSetDir()?.deleteContents(context)
-
         // reset storage without new token, so folders get recreated
         // otherwise stale DocumentFiles will hang around
         storage.reset(null)
-
-        // create backup folders
-        storage.currentSetDir ?: throw IOException()
     }
 
     @Throws(IOException::class)
@@ -80,16 +114,6 @@ internal class DocumentsProviderStoragePlugin(
         if (!file.delete()) throw IOException("Failed to delete $name")
     }
 
-    @Throws(IOException::class)
-    override suspend fun hasBackup(storage: Storage): Boolean {
-        // potentially get system user context if needed here
-        val c = appContext.getStorageContext { storage.isUsb }
-        val parent = DocumentFile.fromTreeUri(c, storage.uri) ?: throw AssertionError()
-        val rootDir = parent.findFileBlocking(c, DIRECTORY_ROOT) ?: return false
-        val backupSets = getBackups(c, rootDir)
-        return backupSets.isNotEmpty()
-    }
-
     override suspend fun getAvailableBackups(): Sequence<EncryptedMetadata>? {
         val rootDir = storage.rootBackupDir ?: return null
         val backupSets = getBackups(context, rootDir)
@@ -113,7 +137,6 @@ internal class DocumentsProviderStoragePlugin(
 
 class BackupSet(val token: Long, val metadataFile: DocumentFile)
 
-@Suppress("BlockingMethodInNonBlockingContext")
 internal suspend fun getBackups(context: Context, rootDir: DocumentFile): List<BackupSet> {
     val backupSets = ArrayList<BackupSet>()
     val files = try {
@@ -146,9 +169,6 @@ internal suspend fun getBackups(context: Context, rootDir: DocumentFile): List<B
     return backupSets
 }
 
-private val tokenRegex = Regex("([0-9]{13})") // good until the year 2286
-private val chunkFolderRegex = Regex("[a-f0-9]{2}")
-
 private fun DocumentFile.getTokenOrNull(name: String?): Long? {
     val looksLikeToken = name != null && tokenRegex.matches(name)
     // check for isDirectory only if we already have a valid token (causes DB query)
@@ -169,5 +189,5 @@ private fun DocumentFile.getTokenOrNull(name: String?): Long? {
 private fun isUnexpectedFile(name: String): Boolean {
     return name != FILE_NO_MEDIA &&
         !chunkFolderRegex.matches(name) &&
-        !name.endsWith(".SeedSnap")
+        !name.endsWith(SNAPSHOT_EXT)
 }

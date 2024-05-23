@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2020 The Calyx Institute
+  SPDX-License-Identifier: Apache-2.0
+  -->
 <resources>
     <!-- AOSP colors -->
     <!-- https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-14.0.0_r1/core/res/res/values/colors_device_defaults.xml#35 -->
@@ -24,4 +28,5 @@
     <color name="green">#558B2F</color>
     <color name="yellow">#F9A825</color>
     <color name="davx5_background">#7cb342</color>
+    <color name="round_sync_background">#4bae4f</color>
 </resources>

@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.e2e.impl
 
 import androidx.test.filters.LargeTest
@@ -17,7 +22,7 @@ internal class BackupRestoreTest : SeedvaultLargeTest() {
             confirmCode()
         }
 
-        if (settingsManager.getStorage() == null) {
+        if (settingsManager.getSafStorage() == null) {
             chooseStorageLocation()
         } else {
             changeBackupLocation()

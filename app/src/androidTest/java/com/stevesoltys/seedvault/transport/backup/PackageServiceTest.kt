@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2020 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.transport.backup
 
 import android.content.pm.PackageInfo
@@ -5,6 +10,7 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.stevesoltys.seedvault.plugins.StoragePlugin
+import com.stevesoltys.seedvault.plugins.StoragePluginManager
 import com.stevesoltys.seedvault.settings.AppStatus
 import com.stevesoltys.seedvault.settings.SettingsManager
 import io.mockk.every
@@ -24,7 +30,9 @@ class PackageServiceTest : KoinComponent {
 
     private val settingsManager: SettingsManager by inject()
 
-    private val storagePlugin: StoragePlugin by inject()
+    private val storagePluginManager: StoragePluginManager by inject()
+
+    private val storagePlugin: StoragePlugin<*> get() = storagePluginManager.appPlugin
 
     @Test
     fun testNotAllowedPackages() {

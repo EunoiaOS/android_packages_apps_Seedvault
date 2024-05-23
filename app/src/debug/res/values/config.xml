@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2020 The Calyx Institute
+  SPDX-License-Identifier: Apache-2.0
+  -->
 <resources>
     <bool name="show_restore_in_settings">true</bool>
 
@@ -7,5 +11,6 @@
         <item>org.nextcloud.documents</item>
         <item>org.nextcloud.beta.documents</item>
         <item>at.bitfire.davdroid.webdav</item>
+        <item>de.felixnuesse.extract.vcp</item>
     </string-array>
 </resources>

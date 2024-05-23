@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2017-2019 Steve Soltys
+  SPDX-FileCopyrightText: 2020 The Calyx Institute
+  SPDX-License-Identifier: Apache-2.0
+  -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.stevesoltys.seedvault"
@@ -15,6 +20,9 @@
 
     <!-- This is needed to check for internet access when backup is stored on network storage -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Used for internal WebDAV plugin -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- This is needed to inform users about backup status and errors -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -64,6 +72,10 @@
         android:name="android.permission.READ_LOGS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- Used to get the name of the current profile -->
+    <uses-permission android:name="android.permission.QUERY_USERS"
+        tools:ignore="ProtectedPermissions" />
+
     <!-- Used for periodic storage backups -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
@@ -93,7 +105,8 @@
 
         <activity
             android:name=".ui.storage.StorageActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.storage.PermissionGrantActivity"
@@ -156,6 +169,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- Used by Workmanager to schedule our workers -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
         <!-- Used to start actual BackupService depending on scheduling criteria -->
         <service
             android:name=".storage.StorageBackupJobService"

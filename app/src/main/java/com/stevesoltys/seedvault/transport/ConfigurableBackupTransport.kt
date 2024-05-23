@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2020 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.transport
 
 import android.app.backup.BackupAgent.FLAG_CLIENT_SIDE_ENCRYPTION_ENABLED
@@ -130,8 +135,8 @@ class ConfigurableBackupTransport internal constructor(private val context: Cont
         return backupCoordinator.isAppEligibleForBackup(targetPackage, isFullBackup)
     }
 
-    override fun getBackupQuota(packageName: String, isFullBackup: Boolean): Long = runBlocking {
-        backupCoordinator.getBackupQuota(packageName, isFullBackup)
+    override fun getBackupQuota(packageName: String, isFullBackup: Boolean): Long {
+        return backupCoordinator.getBackupQuota(packageName, isFullBackup)
     }
 
     override fun clearBackupData(packageInfo: PackageInfo): Int = runBlocking {

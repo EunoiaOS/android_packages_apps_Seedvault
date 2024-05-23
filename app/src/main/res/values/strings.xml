@@ -1,3 +1,7 @@
+<!--
+  SPDX-FileCopyrightText: 2020 The Calyx Institute
+  SPDX-License-Identifier: Apache-2.0
+  -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
     <string name="app_name" translatable="false">Seedvault</string>
@@ -30,6 +34,11 @@
     <string name="settings_backup_apk_dialog_disable">Disable app backup</string>
     <string name="settings_backup_status_title">Backup status</string>
     <string name="settings_backup_status_summary">Last backup: %1$s</string>
+    <string name="settings_backup_status_next_backup">Next backup: %1$s</string>
+    <string name="settings_backup_status_next_backup_estimate">Next backup (estimate): %1$s</string>
+    <string name="settings_backup_status_next_backup_past">once conditions are fulfilled</string>
+    <string name="settings_backup_status_next_backup_usb">Backups will happen automatically when you plug in your USB drive</string>
+    <string name="settings_backup_scheduling_title">Backup scheduling</string>
     <string name="settings_backup_exclude_apps">Exclude apps</string>
     <string name="settings_backup_now">Backup now</string>
     <string name="settings_category_storage">Storage backup (beta)</string>
@@ -45,6 +54,15 @@
     <string name="settings_backup_new_code_dialog_title">New recovery code required</string>
     <string name="settings_backup_new_code_dialog_message">To continue using app backups, you need to generate a new recovery code.\n\nWe are sorry for the inconvenience.</string>
     <string name="settings_backup_new_code_code_dialog_ok">New code</string>
+
+    <string name="settings_scheduling_frequency_title">Backup frequency</string>
+    <string name="settings_scheduling_frequency_12_hours">Every 12 hours</string>
+    <string name="settings_scheduling_frequency_daily">Daily</string>
+    <string name="settings_scheduling_frequency_3_days">Every 3 days</string>
+    <string name="settings_scheduling_frequency_weekly">Weekly</string>
+    <string name="settings_scheduling_category_conditions_title">Conditions</string>
+    <string name="settings_scheduling_metered_title">Back up when using mobile data</string>
+    <string name="settings_scheduling_charging_title">Back up only when charging</string>
 
     <string name="settings_expert_title">Expert settings</string>
     <string name="settings_expert_quota_title">Unlimited app quota</string>
@@ -65,6 +83,7 @@
     <string name="storage_fake_drive_summary">Needs to be plugged in</string>
     <string name="storage_available_bytes"><xliff:g example="1 GB" id="size">%1$s</xliff:g> free</string>
     <string name="storage_not_recommended"><xliff:g example="Skynet">%1$s</xliff:g> (Not recommended)</string>
+    <string name="storage_round_sync_summary_prefix" translatable="false">RoundSync Remote: </string>
     <string name="storage_fake_nextcloud_title" translatable="false">Nextcloud</string>
     <string name="storage_fake_nextcloud_summary">Tap to install</string>
     <string name="storage_fake_nextcloud_summary_installed">Tap to set up account</string>
@@ -81,6 +100,16 @@
     <string name="storage_check_fragment_backup_error">An error occurred while accessing the backup location.</string>
     <string name="storage_check_fragment_permission_error">Unable to get the permission to write to the backup location.</string>
     <string name="storage_check_fragment_error_button">Back</string>
+
+    <string name="storage_webdav_option_title">WebDAV Cloud (beta)</string>
+    <string name="storage_webdav_option_summary">Integrated direct WebDAV access</string>
+    <string name="storage_webdav_config_url">WebDAV URL</string>
+    <string name="storage_webdav_config_url_helper">Be sure to enter the full URL here. E.g. for Nextcloud, it has the form https://yourserver.com/remote.php/webdav</string>
+    <string name="storage_webdav_config_user">User name</string>
+    <string name="storage_webdav_config_pass">Password</string>
+    <string name="storage_webdav_config_button">Use WebDAV cloud</string>
+    <string name="storage_webdav_config_malformed_url">Invalid WebDAV URL</string>
+    <string name="storage_webdav_name">WebDAV %s</string>
 
     <!-- Recovery Code -->
     <string name="recovery_code_title">Recovery code</string>
@@ -121,6 +150,8 @@
     <string name="notification_channel_title">Backup notification</string>
     <string name="notification_success_channel_title">Success notification</string>
     <string name="notification_title">Backup running</string>
+    <string name="notification_apk_text">Backing up APK of %s</string>
+    <string name="notification_apk_not_backed_up">Saving list of apps we can not back up.</string>
     <string name="notification_backup_already_running">Backup already in progress</string>
     <string name="notification_backup_disabled">Backup not enabled</string>
 
@@ -132,6 +163,9 @@
     <string name="notification_error_title">Backup error</string>
     <string name="notification_error_text">A device backup failed to run.</string>
     <string name="notification_error_action">Fix</string>
+
+    <string name="notification_space_error_title">Insufficient backup space</string>
+    <string name="notification_space_error_text">Your backup location is running out of space. Free up space, so backups can run.</string>
 
     <string name="notification_restore_error_channel_title">Auto restore flash drive error</string>
     <string name="notification_restore_error_title">Could not restore data for %1$s</string>
@@ -168,6 +202,7 @@
     <string name="restore_title">Restore from backup</string>
     <string name="restore_choose_restore_set">Choose a backup to restore</string>
     <string name="restore_restore_set_times">Last backup %1$s · First %2$s.</string>
+    <string name="restore_restore_set_size">Size: <xliff:g example="1 GB" id="size">%1$s</xliff:g></string>
     <string name="restore_skip">Don\'t restore</string>
     <string name="restore_skip_apps">Skip restoring apps</string>
     <string name="restore_invalid_location_title">No backups found</string>

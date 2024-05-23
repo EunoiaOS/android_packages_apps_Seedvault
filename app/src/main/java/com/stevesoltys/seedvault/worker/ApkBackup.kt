@@ -1,4 +1,9 @@
-package com.stevesoltys.seedvault.transport.backup
+/*
+ * SPDX-FileCopyrightText: 2024 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package com.stevesoltys.seedvault.worker
 
 import android.annotation.SuppressLint
 import android.content.pm.PackageInfo
@@ -13,8 +18,9 @@ import com.stevesoltys.seedvault.encodeBase64
 import com.stevesoltys.seedvault.metadata.ApkSplit
 import com.stevesoltys.seedvault.metadata.MetadataManager
 import com.stevesoltys.seedvault.metadata.PackageMetadata
-import com.stevesoltys.seedvault.metadata.PackageState
 import com.stevesoltys.seedvault.settings.SettingsManager
+import com.stevesoltys.seedvault.transport.backup.isNotUpdatedSystemApp
+import com.stevesoltys.seedvault.transport.backup.isTestOnly
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -24,7 +30,6 @@ import java.security.MessageDigest
 
 private val TAG = ApkBackup::class.java.simpleName
 
-@Suppress("BlockingMethodInNonBlockingContext")
 internal class ApkBackup(
     private val pm: PackageManager,
     private val crypto: Crypto,
@@ -44,7 +49,6 @@ internal class ApkBackup(
     @SuppressLint("NewApi") // can be removed when minSdk is set to 30
     suspend fun backupApkIfNecessary(
         packageInfo: PackageInfo,
-        packageState: PackageState,
         streamGetter: suspend (name: String) -> OutputStream,
     ): PackageMetadata? {
         // do not back up @pm@
@@ -118,11 +122,10 @@ internal class ApkBackup(
         val splits =
             if (packageInfo.splitNames == null) null else backupSplitApks(packageInfo, streamGetter)
 
-        Log.d(TAG, "Backed up new APK of $packageName with version $version.")
+        Log.d(TAG, "Backed up new APK of $packageName with version ${packageInfo.versionName}.")
 
         // return updated metadata
-        return PackageMetadata(
-            state = packageState,
+        return packageMetadata.copy(
             version = version,
             installer = pm.getInstallSourceInfo(packageName).installingPackageName,
             splits = splits,
@@ -191,13 +194,16 @@ internal class ApkBackup(
         // that we exceed the maximum file name length, so we use the hash instead.
         // The downside is that we need to read the file two times.
         val messageDigest = MessageDigest.getInstance("SHA-256")
-        getApkInputStream(sourceDir).use { inputStream ->
+        val size = getApkInputStream(sourceDir).use { inputStream ->
             val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var readCount = 0
             var bytes = inputStream.read(buffer)
             while (bytes >= 0) {
+                readCount += bytes
                 messageDigest.update(buffer, 0, bytes)
                 bytes = inputStream.read(buffer)
             }
+            readCount
         }
         val sha256 = messageDigest.digest().encodeBase64()
         val name = crypto.getNameForApk(metadataManager.salt, packageName, splitName)
@@ -207,7 +213,7 @@ internal class ApkBackup(
                 inputStream.copyTo(outputStream)
             }
         }
-        return ApkSplit(splitName, sha256)
+        return ApkSplit(splitName, size.toLong(), sha256)
     }
 
 }

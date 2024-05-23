@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2020 The Calyx Institute
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.stevesoltys.seedvault.transport.restore
 
 import android.app.backup.BackupTransport.NO_MORE_DATA
@@ -13,6 +18,7 @@ import com.stevesoltys.seedvault.header.VersionHeader
 import com.stevesoltys.seedvault.header.getADForFull
 import com.stevesoltys.seedvault.plugins.LegacyStoragePlugin
 import com.stevesoltys.seedvault.plugins.StoragePlugin
+import com.stevesoltys.seedvault.plugins.StoragePluginManager
 import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -31,16 +37,26 @@ import java.io.IOException
 import java.security.GeneralSecurityException
 import kotlin.random.Random
 
-@Suppress("BlockingMethodInNonBlockingContext")
 internal class FullRestoreTest : RestoreTest() {
 
-    private val plugin = mockk<StoragePlugin>()
+    private val storagePluginManager: StoragePluginManager = mockk()
+    private val plugin = mockk<StoragePlugin<*>>()
     private val legacyPlugin = mockk<LegacyStoragePlugin>()
-    private val restore = FullRestore(plugin, legacyPlugin, outputFactory, headerReader, crypto)
+    private val restore = FullRestore(
+        pluginManager = storagePluginManager,
+        legacyPlugin = legacyPlugin,
+        outputFactory = outputFactory,
+        headerReader = headerReader,
+        crypto = crypto,
+    )
 
     private val encrypted = getRandomByteArray()
     private val outputStream = ByteArrayOutputStream()
     private val ad = getADForFull(VERSION, packageInfo.packageName)
+
+    init {
+        every { storagePluginManager.appPlugin } returns plugin
+    }
 
     @Test
     fun `has no initial state`() {
